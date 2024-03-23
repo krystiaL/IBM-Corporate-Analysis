@@ -2,6 +2,8 @@
 #          LIBRARY AND MODULE IMPORTS
 #---------------------------------------------------
 import os
+import shutil
+
 import numpy as np
 import pandas as pd
 import requests
@@ -36,20 +38,21 @@ class Edgar():
         #transform json into dataframe
         companies_df = pd.DataFrame.from_dict(data, orient='index')
 
-        #modify data || add leading zeros to CIK no.
+        #modify data || add leading zeros to CIK and typecast the entire column to str
         companies_df['cik_str'] = companies_df['cik_str'].astype(str).str.zfill(10)
+        companies_df['cik_str'] = companies_df['cik_str'].astype(str)
 
         #modify data || set company title to lowercase
         companies_df['title'] = companies_df['title'].str.lower()
 
-        #write df into a csv file and save to data folder
-        saved_df = companies_df.to_csv(CSV_PATH)
-
-        # Check if the DataFrame was saved successfully
-        if saved_df is None:
+        try:
+            companies_df.to_csv(CSV_PATH)
             print(f"Companies' metadata saved successfully in {CSV_PATH}")
-        else:
-            print("Failed to save metadata!")
+        except Exception as e:
+            print("Failed to save metadata!", e)
+
+        return companies_df
+
 
     def fetch_ticker(self, company_name: str):
         '''
@@ -78,9 +81,64 @@ class Edgar():
             print(f"No data found for company with name: {company_name}")
             return None
 
-    def fetch_cik():
+    def fetch_cik(self, ticker: str):
         '''
         This function takes the company_ticker(str) as a parameter
         and returns the listed company's 10-digit cik number.
+        '''
+        metadata = pd.read_csv(CSV_PATH)
+        #retain leading zeros for the 10-digit cik as str
+        metadata['cik_str'] = metadata['cik_str'].astype(str).str.zfill(10)
+
+        #search for cik using unique company ticker
+        company_data = metadata.loc[metadata['ticker'] == ticker]
+        company_cik = company_data['cik_str'].iloc[0]
+
+        return company_cik
+
+    def fetch_form_submissions(self, cik: str,
+                               user_email: str,
+                               form_type: str
+                               ):
+        '''
+        filing submission info request
+        '''
+        ####### parameters ######
+        '''
+        form_type = ['8-K', 'PX14A6G', 'ARS', 'DEFA14A', 'DEF 14A', '10-K', '4',
+       'SC 13G/A', '424B5', 'FWP', '424B3', 'S-3ASR', '3', '10-Q', '11-K',
+       'SD', '25-NSE', 'CERT', '8-A12B', 'UPLOAD', 'CORRESP', '8-K/A',
+       'IRANNOTICE', 'SC 13G', 'S-8', 'S-8 POS', '3/A', '4/A']
+        '''
+
+
+        headers = {'User-Agent': user_email}
+        response = requests.get(
+                    f'https://data.sec.gov/submissions/CIK{cik}.json',
+                    headers=headers
+                    )
+        submission = response.json()['filings']['recent']
+
+        submission_df = pd.DataFrame.from_dict(submission)
+        #filter df depending on specific form
+        filtered_df = submission_df.loc[submission_df['form'] == form_type]
+
+        return filtered_df
+
+    def fetch_facts_data():
+        '''
+        company facts request
+        '''
+        pass
+
+    def fetch_common_stock():
+        '''
+        DEI
+        '''
+        pass
+
+    def fetch_acc_items():
+        '''
+        US-GAAP
         '''
         pass
