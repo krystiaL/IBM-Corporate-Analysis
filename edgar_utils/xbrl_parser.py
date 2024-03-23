@@ -7,7 +7,6 @@ import pandas as pd
 import requests
 
 from edgar_utils.params import *
-
 #---------------------------------------------------
 
 
@@ -52,13 +51,32 @@ class Edgar():
         else:
             print("Failed to save metadata!")
 
-    def fetch_ticker():
+    def fetch_ticker(self, company_name: str):
         '''
         This function takes a company name as a parameter
-        and returns the company_ticker(str).
+        and returns the possible company_ticker(str).
         '''
-        #store the
-        pass
+        #store the company input name and turn into lower case
+        title = company_name.lower()
+
+        metadata = pd.read_csv(CSV_PATH)
+
+        title_data = metadata[metadata['title'].str.contains(title, case=False)]
+        # ticker = []
+
+        if not title_data.empty:  # Check if DataFrame is not empty
+            # for index, row in title_data.iterrows():
+            #     ticker.append({row['ticker']: row['title']})
+            ticker_dict = {}  # Initialize an empty dictionary to store ticker-title pairs
+            for index, row in title_data.iterrows():
+                ticker_dict[row['ticker']] = row['title']
+
+            ticker_df = pd.DataFrame(list(ticker_dict.items()), columns=['ticker', 'title'])
+            print(ticker_df)
+            return ticker_df
+        else:
+            print(f"No data found for company with name: {company_name}")
+            return None
 
     def fetch_cik():
         '''
