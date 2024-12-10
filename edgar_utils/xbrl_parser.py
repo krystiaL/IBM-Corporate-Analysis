@@ -125,15 +125,28 @@ class Edgar():
 
         return filtered_df
 
-    def fetch_facts_data():
+    def fetch_facts_data(self, cik: str, user_email: str):
         '''
         company facts request
         '''
-        pass
+        headers = {'User-Agent': user_email}
+        response = requests.get(
+                    f'https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json',
+                    headers=headers
+                    )
+        facts = response.json()
 
-    def fetch_common_stock():
+        return facts
+
+    def fetch_common_stock(self, facts, fy):
         '''
         DEI
+        '''
+        ####### parameters ######
+        '''
+        facts = json file from fetch_facts_data function
+        fy = for the year ended
+        
         '''
         pass
 
